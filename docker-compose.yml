@@ -1,0 +1,55 @@
+version: '3.3'
+
+services:
+  jenkins:
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "3"
+        max-size: "10m"
+    image: ignasliu/jenkins-controler-jcasc
+    ports:
+      - 50000:50000
+      - 8080:8080
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    environment:
+      - CASC_JENKINS_CONFIG=/var/jenkins_conf
+      - JENKINS_RUNNER=${JENKINS_RUNNER:-jenkins}
+      - JENKINS_PASSWORD=${JENKINS_PASSWORD:-SecretPasswd21}
+
+  agent:
+    image: ignasliu/jenkins-agent-jcasc
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size:  "20m"
+        max-file: "3"
+    environment:
+      - JENKINS_RUNNER=${JENKINS_RUNNER:-jenkins}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker:/var/lib/docker
+
+  artifactory:
+    image: ignasliu/artifactory
+    container_name: artifactory
+    ports:
+     - 8081:8081
+     - 8082:8082
+    volumes:
+     - artifactory-data:/var/opt/jfrog/artifactory
+#    Add extra Java options by uncommenting the following lines
+#    environment:
+#     - EXTRA_JAVA_OPTIONS=-Xms512m -Xmx4g
+    restart: always
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 32000
+        hard: 40000
+
+volumes:
+  jenkins_home:
+  artifactory-data:
